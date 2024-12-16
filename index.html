@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Socket.IO Mouse-connection</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+      body {
+        background-color: gray;
+        cursor: none;
+        overflow: hidden;
+      }
+      .mouse {
+        width: 10px;
+        height: 10px;
+        background-color: cyan;
+        position: absolute;
+        top: 0;
+        left: 0;
+        border-radius: 12px;
+        cursor: none;
+      }
+      .mouse::after {
+        content: "";
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        background-color: red;
+        border-radius: 50%;
+        top: -2px;
+        left: -2px;
+        z-index: -1;
+      }
+
+      .mouse::before {
+        content: attr(user-name);
+        background-color: white;
+        bottom: 10px;
+        position: absolute;
+        padding: 0 10px;
+      }
+
+      opacity {
+        opacity: 0.3;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="mouse" user-name="" client="" class="mouse"></div>
+    <script>
+      const clientId = (Math.random() * 1000000).toFixed(0);
+      const body = document.querySelector("body");
+      document.querySelector("div").setAttribute("client", clientId);
+      const myMouse = document.querySelector(`div[client="${clientId}"]`);
+      const socket = io();
+
+      let mouseX = 0;
+      let mouseY = 0;
+
+      document.addEventListener("mouseenter", () => {
+        myMouse.style.backgroundColor = "green";
+      });
+
+      document.addEventListener("mouseleave", () => {
+        console.log("leave");
+        myMouse.style.backgroundColor = "cyan";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        mouseX = e.pageX;
+        mouseY = e.pageY;
+
+        myMouse.style.top = mouseY + "px";
+        myMouse.style.left = mouseX + "px";
+
+        socket.emit("user-move", { clientId, x: mouseX, y: mouseY });
+      });
+
+      socket.on("user-moved", (response) => {
+        updateCursor(response);
+      });
+
+      function updateCursor(response) {
+        const div = document.createElement("div");
+
+        div.setAttribute("user-name", response.clientId);
+        div.setAttribute("id", response.clientId);
+        div.setAttribute("client", response.clientId);
+        div.style.top = response.y + "px";
+        div.style.left = response.x + "px";
+        div.classList.add("mouse");
+
+        document.querySelector(`div[client="${response.clientId}"]`)?.remove();
+
+        body.appendChild(div);
+      }
+    </script>
+  </body>
+</html>
